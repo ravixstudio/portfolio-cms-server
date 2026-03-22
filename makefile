@@ -36,3 +36,6 @@ migrate-version:
 migrate-create:
 	@if [ -z "$(NAME)" ]; then echo "usage: make migrate-create NAME=your_migration_name"; exit 1; fi
 	migrate create -ext sql -dir $(MIGRATIONS_DIR) -seq $(NAME)
+
+start:
+	go run ./cmd/server

@@ -17,6 +17,11 @@ func Load() *Config {
 		log.Println("No .env file found, reading from environment")
 	}
 
+	// Validate env vars
+	if getEnv("DATABASE_URL", "") == "" {
+		panic("DATABASE_URL is not set")
+	}
+
 	return &Config{
 		Port:        getEnv("PORT", "8000"),
 		DatabaseURL: getEnv("DATABASE_URL", ""),
