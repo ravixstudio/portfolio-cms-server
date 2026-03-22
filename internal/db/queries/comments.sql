@@ -5,8 +5,8 @@ WHERE blog_id = $1
 ORDER BY created_at ASC;
 
 -- name: CreateComment :one
-INSERT INTO projects.comments (blog_id, parent_id, author_name, author_email, body)
-VALUES ($1, $2, $3, $4, $5)
+INSERT INTO projects.comments (blog_id, parent_id, visitor_id, body)
+VALUES ($1, $2, $3, $4)
 RETURNING *;
 
 -- name: DeleteComment :exec

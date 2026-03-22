@@ -11,6 +11,33 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
+const createOAuthAccount = `-- name: CreateOAuthAccount :one
+INSERT INTO users.oauth_accounts (user_id, provider, provider_id)
+VALUES ($1, $2, $3)
+RETURNING id, user_id, provider, provider_id, created_at, updated_at, deleted_at
+`
+
+type CreateOAuthAccountParams struct {
+	UserID     pgtype.UUID        `json:"user_id"`
+	Provider   UsersOauthProvider `json:"provider"`
+	ProviderID string             `json:"provider_id"`
+}
+
+func (q *Queries) CreateOAuthAccount(ctx context.Context, arg CreateOAuthAccountParams) (UsersOauthAccount, error) {
+	row := q.db.QueryRow(ctx, createOAuthAccount, arg.UserID, arg.Provider, arg.ProviderID)
+	var i UsersOauthAccount
+	err := row.Scan(
+		&i.ID,
+		&i.UserID,
+		&i.Provider,
+		&i.ProviderID,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+		&i.DeletedAt,
+	)
+	return i, err
+}
+
 const createUser = `-- name: CreateUser :one
 INSERT INTO users.users (email, password)
 VALUES ($1, $2)
@@ -36,11 +63,46 @@ func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (UsersUs
 	return i, err
 }
 
+const createVisitor = `-- name: CreateVisitor :one
+INSERT INTO projects.visitors (project_id, email, password, firstname, lastname)
+VALUES ($1, $2, $3, $4, $5)
+RETURNING id, project_id, email, password, firstname, lastname, created_at, updated_at, deleted_at
+`
+
+type CreateVisitorParams struct {
+	ProjectID pgtype.UUID `json:"project_id"`
+	Email     string      `json:"email"`
+	Password  string      `json:"password"`
+	Firstname *string     `json:"firstname"`
+	Lastname  *string     `json:"lastname"`
+}
+
+func (q *Queries) CreateVisitor(ctx context.Context, arg CreateVisitorParams) (ProjectsVisitor, error) {
+	row := q.db.QueryRow(ctx, createVisitor,
+		arg.ProjectID,
+		arg.Email,
+		arg.Password,
+		arg.Firstname,
+		arg.Lastname,
+	)
+	var i ProjectsVisitor
+	err := row.Scan(
+		&i.ID,
+		&i.ProjectID,
+		&i.Email,
+		&i.Password,
+		&i.Firstname,
+		&i.Lastname,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+		&i.DeletedAt,
+	)
+	return i, err
+}
+
 const getUserByEmail = `-- name: GetUserByEmail :one
-SELECT id, email, password, created_at, updated_at, deleted_at
-FROM users.users
-WHERE email = $1
-  AND deleted_at IS NULL
+SELECT id, email, password, created_at, updated_at, deleted_at FROM users.users
+WHERE email = $1 AND deleted_at IS NULL
 `
 
 func (q *Queries) GetUserByEmail(ctx context.Context, email string) (UsersUser, error) {
@@ -57,20 +119,51 @@ func (q *Queries) GetUserByEmail(ctx context.Context, email string) (UsersUser, 
 	return i, err
 }
 
-const getUserByID = `-- name: GetUserByID :one
-SELECT id, email, password, created_at, updated_at, deleted_at
-FROM users.users
-WHERE id = $1
-  AND deleted_at IS NULL
+const getUserByOAuthProvider = `-- name: GetUserByOAuthProvider :one
+SELECT u.id, u.email, u.password, u.created_at, u.updated_at, u.deleted_at FROM users.users u
+                    JOIN users.oauth_accounts oa ON u.id = oa.user_id
+WHERE oa.provider = $1 AND oa.provider_id = $2 AND u.deleted_at IS NULL
 `
 
-func (q *Queries) GetUserByID(ctx context.Context, id pgtype.UUID) (UsersUser, error) {
-	row := q.db.QueryRow(ctx, getUserByID, id)
+type GetUserByOAuthProviderParams struct {
+	Provider   UsersOauthProvider `json:"provider"`
+	ProviderID string             `json:"provider_id"`
+}
+
+func (q *Queries) GetUserByOAuthProvider(ctx context.Context, arg GetUserByOAuthProviderParams) (UsersUser, error) {
+	row := q.db.QueryRow(ctx, getUserByOAuthProvider, arg.Provider, arg.ProviderID)
 	var i UsersUser
 	err := row.Scan(
 		&i.ID,
 		&i.Email,
 		&i.Password,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+		&i.DeletedAt,
+	)
+	return i, err
+}
+
+const getVisitorByEmail = `-- name: GetVisitorByEmail :one
+SELECT id, project_id, email, password, firstname, lastname, created_at, updated_at, deleted_at FROM projects.visitors
+WHERE project_id = $1 AND email = $2 AND deleted_at IS NULL
+`
+
+type GetVisitorByEmailParams struct {
+	ProjectID pgtype.UUID `json:"project_id"`
+	Email     string      `json:"email"`
+}
+
+func (q *Queries) GetVisitorByEmail(ctx context.Context, arg GetVisitorByEmailParams) (ProjectsVisitor, error) {
+	row := q.db.QueryRow(ctx, getVisitorByEmail, arg.ProjectID, arg.Email)
+	var i ProjectsVisitor
+	err := row.Scan(
+		&i.ID,
+		&i.ProjectID,
+		&i.Email,
+		&i.Password,
+		&i.Firstname,
+		&i.Lastname,
 		&i.CreatedAt,
 		&i.UpdatedAt,
 		&i.DeletedAt,

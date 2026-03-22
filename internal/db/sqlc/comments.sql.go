@@ -12,25 +12,23 @@ import (
 )
 
 const createComment = `-- name: CreateComment :one
-INSERT INTO projects.comments (blog_id, parent_id, author_name, author_email, body)
-VALUES ($1, $2, $3, $4, $5)
-RETURNING id, blog_id, parent_id, author_name, author_email, body, created_at, updated_at
+INSERT INTO projects.comments (blog_id, parent_id, visitor_id, body)
+VALUES ($1, $2, $3, $4)
+RETURNING id, blog_id, parent_id, body, created_at, updated_at, visitor_id
 `
 
 type CreateCommentParams struct {
-	BlogID      pgtype.UUID `json:"blog_id"`
-	ParentID    pgtype.UUID `json:"parent_id"`
-	AuthorName  string      `json:"author_name"`
-	AuthorEmail *string     `json:"author_email"`
-	Body        string      `json:"body"`
+	BlogID    pgtype.UUID `json:"blog_id"`
+	ParentID  pgtype.UUID `json:"parent_id"`
+	VisitorID pgtype.UUID `json:"visitor_id"`
+	Body      string      `json:"body"`
 }
 
 func (q *Queries) CreateComment(ctx context.Context, arg CreateCommentParams) (ProjectsComment, error) {
 	row := q.db.QueryRow(ctx, createComment,
 		arg.BlogID,
 		arg.ParentID,
-		arg.AuthorName,
-		arg.AuthorEmail,
+		arg.VisitorID,
 		arg.Body,
 	)
 	var i ProjectsComment
@@ -38,11 +36,10 @@ func (q *Queries) CreateComment(ctx context.Context, arg CreateCommentParams) (P
 		&i.ID,
 		&i.BlogID,
 		&i.ParentID,
-		&i.AuthorName,
-		&i.AuthorEmail,
 		&i.Body,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.VisitorID,
 	)
 	return i, err
 }
@@ -64,7 +61,7 @@ func (q *Queries) DeleteComment(ctx context.Context, arg DeleteCommentParams) er
 }
 
 const listCommentsByBlogID = `-- name: ListCommentsByBlogID :many
-SELECT id, blog_id, parent_id, author_name, author_email, body, created_at, updated_at
+SELECT id, blog_id, parent_id, body, created_at, updated_at, visitor_id
 FROM projects.comments
 WHERE blog_id = $1
 ORDER BY created_at ASC
@@ -83,11 +80,10 @@ func (q *Queries) ListCommentsByBlogID(ctx context.Context, blogID pgtype.UUID) 
 			&i.ID,
 			&i.BlogID,
 			&i.ParentID,
-			&i.AuthorName,
-			&i.AuthorEmail,
 			&i.Body,
 			&i.CreatedAt,
 			&i.UpdatedAt,
+			&i.VisitorID,
 		); err != nil {
 			return nil, err
 		}

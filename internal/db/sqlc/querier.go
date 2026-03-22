@@ -16,8 +16,10 @@ type Querier interface {
 	CreateBlog(ctx context.Context, arg CreateBlogParams) (ProjectsBlog, error)
 	CreateComment(ctx context.Context, arg CreateCommentParams) (ProjectsComment, error)
 	CreateLike(ctx context.Context, arg CreateLikeParams) (ProjectsLike, error)
+	CreateOAuthAccount(ctx context.Context, arg CreateOAuthAccountParams) (UsersOauthAccount, error)
 	CreateProject(ctx context.Context, arg CreateProjectParams) (ProjectsProject, error)
 	CreateUser(ctx context.Context, arg CreateUserParams) (UsersUser, error)
+	CreateVisitor(ctx context.Context, arg CreateVisitorParams) (ProjectsVisitor, error)
 	DeleteComment(ctx context.Context, arg DeleteCommentParams) error
 	DeleteLike(ctx context.Context, arg DeleteLikeParams) error
 	GetAPIKeyByHash(ctx context.Context, keyHash string) (ProjectsApiKey, error)
@@ -28,7 +30,8 @@ type Querier interface {
 	GetPublishedBlogByProjectAndSlug(ctx context.Context, arg GetPublishedBlogByProjectAndSlugParams) (ProjectsBlog, error)
 	GetTagByProjectAndSlug(ctx context.Context, arg GetTagByProjectAndSlugParams) (ProjectsTag, error)
 	GetUserByEmail(ctx context.Context, email string) (UsersUser, error)
-	GetUserByID(ctx context.Context, id pgtype.UUID) (UsersUser, error)
+	GetUserByOAuthProvider(ctx context.Context, arg GetUserByOAuthProviderParams) (UsersUser, error)
+	GetVisitorByEmail(ctx context.Context, arg GetVisitorByEmailParams) (ProjectsVisitor, error)
 	ListAPIKeysByProjectID(ctx context.Context, projectID pgtype.UUID) ([]ProjectsApiKey, error)
 	ListBlogsByProject(ctx context.Context, projectID pgtype.UUID) ([]ProjectsBlog, error)
 	ListCommentsByBlogID(ctx context.Context, blogID pgtype.UUID) ([]ProjectsComment, error)

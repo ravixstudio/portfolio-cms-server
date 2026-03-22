@@ -25,24 +25,24 @@ func (q *Queries) CountLikesByBlogID(ctx context.Context, blogID pgtype.UUID) (i
 }
 
 const createLike = `-- name: CreateLike :one
-INSERT INTO projects.likes (blog_id, visitor_hash)
+INSERT INTO projects.likes (blog_id, visitor_id)
 VALUES ($1, $2)
-RETURNING id, blog_id, visitor_hash, created_at
+RETURNING id, blog_id, created_at, visitor_id
 `
 
 type CreateLikeParams struct {
-	BlogID      pgtype.UUID `json:"blog_id"`
-	VisitorHash string      `json:"visitor_hash"`
+	BlogID    pgtype.UUID `json:"blog_id"`
+	VisitorID pgtype.UUID `json:"visitor_id"`
 }
 
 func (q *Queries) CreateLike(ctx context.Context, arg CreateLikeParams) (ProjectsLike, error) {
-	row := q.db.QueryRow(ctx, createLike, arg.BlogID, arg.VisitorHash)
+	row := q.db.QueryRow(ctx, createLike, arg.BlogID, arg.VisitorID)
 	var i ProjectsLike
 	err := row.Scan(
 		&i.ID,
 		&i.BlogID,
-		&i.VisitorHash,
 		&i.CreatedAt,
+		&i.VisitorID,
 	)
 	return i, err
 }
@@ -50,15 +50,15 @@ func (q *Queries) CreateLike(ctx context.Context, arg CreateLikeParams) (Project
 const deleteLike = `-- name: DeleteLike :exec
 DELETE FROM projects.likes
 WHERE blog_id = $1
-  AND visitor_hash = $2
+  AND visitor_id = $2
 `
 
 type DeleteLikeParams struct {
-	BlogID      pgtype.UUID `json:"blog_id"`
-	VisitorHash string      `json:"visitor_hash"`
+	BlogID    pgtype.UUID `json:"blog_id"`
+	VisitorID pgtype.UUID `json:"visitor_id"`
 }
 
 func (q *Queries) DeleteLike(ctx context.Context, arg DeleteLikeParams) error {
-	_, err := q.db.Exec(ctx, deleteLike, arg.BlogID, arg.VisitorHash)
+	_, err := q.db.Exec(ctx, deleteLike, arg.BlogID, arg.VisitorID)
 	return err
 }

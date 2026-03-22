@@ -53,6 +53,48 @@ func (ns NullProjectsBlogStatus) Value() (driver.Value, error) {
 	return string(ns.ProjectsBlogStatus), nil
 }
 
+type UsersOauthProvider string
+
+const (
+	UsersOauthProviderGoogle UsersOauthProvider = "google"
+	UsersOauthProviderGithub UsersOauthProvider = "github"
+)
+
+func (e *UsersOauthProvider) Scan(src interface{}) error {
+	switch s := src.(type) {
+	case []byte:
+		*e = UsersOauthProvider(s)
+	case string:
+		*e = UsersOauthProvider(s)
+	default:
+		return fmt.Errorf("unsupported scan type for UsersOauthProvider: %T", src)
+	}
+	return nil
+}
+
+type NullUsersOauthProvider struct {
+	UsersOauthProvider UsersOauthProvider `json:"users_oauth_provider"`
+	Valid              bool               `json:"valid"` // Valid is true if UsersOauthProvider is not NULL
+}
+
+// Scan implements the Scanner interface.
+func (ns *NullUsersOauthProvider) Scan(value interface{}) error {
+	if value == nil {
+		ns.UsersOauthProvider, ns.Valid = "", false
+		return nil
+	}
+	ns.Valid = true
+	return ns.UsersOauthProvider.Scan(value)
+}
+
+// Value implements the driver Valuer interface.
+func (ns NullUsersOauthProvider) Value() (driver.Value, error) {
+	if !ns.Valid {
+		return nil, nil
+	}
+	return string(ns.UsersOauthProvider), nil
+}
+
 type ProjectsApiKey struct {
 	ID        pgtype.UUID        `json:"id"`
 	ProjectID pgtype.UUID        `json:"project_id"`
@@ -88,21 +130,20 @@ type ProjectsBlogTag struct {
 }
 
 type ProjectsComment struct {
-	ID          pgtype.UUID        `json:"id"`
-	BlogID      pgtype.UUID        `json:"blog_id"`
-	ParentID    pgtype.UUID        `json:"parent_id"`
-	AuthorName  string             `json:"author_name"`
-	AuthorEmail *string            `json:"author_email"`
-	Body        string             `json:"body"`
-	CreatedAt   pgtype.Timestamptz `json:"created_at"`
-	UpdatedAt   pgtype.Timestamptz `json:"updated_at"`
+	ID        pgtype.UUID        `json:"id"`
+	BlogID    pgtype.UUID        `json:"blog_id"`
+	ParentID  pgtype.UUID        `json:"parent_id"`
+	Body      string             `json:"body"`
+	CreatedAt pgtype.Timestamptz `json:"created_at"`
+	UpdatedAt pgtype.Timestamptz `json:"updated_at"`
+	VisitorID pgtype.UUID        `json:"visitor_id"`
 }
 
 type ProjectsLike struct {
-	ID          pgtype.UUID        `json:"id"`
-	BlogID      pgtype.UUID        `json:"blog_id"`
-	VisitorHash string             `json:"visitor_hash"`
-	CreatedAt   pgtype.Timestamptz `json:"created_at"`
+	ID        pgtype.UUID        `json:"id"`
+	BlogID    pgtype.UUID        `json:"blog_id"`
+	CreatedAt pgtype.Timestamptz `json:"created_at"`
+	VisitorID pgtype.UUID        `json:"visitor_id"`
 }
 
 type ProjectsProject struct {
@@ -121,6 +162,28 @@ type ProjectsTag struct {
 	Name      string             `json:"name"`
 	Slug      string             `json:"slug"`
 	CreatedAt pgtype.Timestamptz `json:"created_at"`
+}
+
+type ProjectsVisitor struct {
+	ID        pgtype.UUID        `json:"id"`
+	ProjectID pgtype.UUID        `json:"project_id"`
+	Email     string             `json:"email"`
+	Password  string             `json:"password"`
+	Firstname *string            `json:"firstname"`
+	Lastname  *string            `json:"lastname"`
+	CreatedAt pgtype.Timestamptz `json:"created_at"`
+	UpdatedAt pgtype.Timestamptz `json:"updated_at"`
+	DeletedAt pgtype.Timestamptz `json:"deleted_at"`
+}
+
+type UsersOauthAccount struct {
+	ID         pgtype.UUID        `json:"id"`
+	UserID     pgtype.UUID        `json:"user_id"`
+	Provider   UsersOauthProvider `json:"provider"`
+	ProviderID string             `json:"provider_id"`
+	CreatedAt  pgtype.Timestamptz `json:"created_at"`
+	UpdatedAt  pgtype.Timestamptz `json:"updated_at"`
+	DeletedAt  pgtype.Timestamptz `json:"deleted_at"`
 }
 
 type UsersUser struct {

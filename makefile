@@ -26,16 +26,17 @@ help:
 
 migrate-up:
 	$(call WITH_ENV,migrate -path $(MIGRATIONS_DIR) -database "$$DATABASE_URL" up)
-
+	sqlc generate
 migrate-down migrate-down-one:
 	$(call WITH_ENV,migrate -path $(MIGRATIONS_DIR) -database "$$DATABASE_URL" down 1)
+	sqlc generate
 
 migrate-version:
 	$(call WITH_ENV,migrate -path $(MIGRATIONS_DIR) -database "$$DATABASE_URL" version)
 
 migrate-create:
-	@if [ -z "$(NAME)" ]; then echo "usage: make migrate-create NAME=your_migration_name"; exit 1; fi
-	migrate create -ext sql -dir $(MIGRATIONS_DIR) -seq $(NAME)
+	@if [ -z "$(name)" ]; then echo "usage: make migrate-create name=your_migration_name"; exit 1; fi
+	migrate create -ext sql -dir $(MIGRATIONS_DIR) -seq $(name)
 
 start:
 	go run ./cmd/server
